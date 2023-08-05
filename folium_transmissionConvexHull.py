@@ -20,6 +20,7 @@ total_rows = sum(1 for _ in open('data/FM_service_contour_current.csv'))  # Coun
 total_chunks = total_rows // chunksize + 1  # Calculate the total number of chunks
 
 # Load the data in chunks and track progress with tqdm
+# for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_current.csv', chunksize=chunksize, nrows=2000)), total=total_chunks, desc='Total CSV'):
 for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_current.csv', chunksize=chunksize, nrows=2000)), total=total_chunks, desc='Total CSV'):
     chunk_rows = len(df_chunk)  # Number of rows in the current chunk
     for _, row in tqdm(df_chunk.iterrows(), total=chunk_rows, desc='Processing Chunk', leave=False):
