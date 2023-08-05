@@ -24,11 +24,8 @@ os.makedirs(processed_output_dir_point, exist_ok=True)
 
 
 def process_and_save_image(image, unprocessed_output_file_path, processed_output_file_path, application_id):
-    # Save the unprocessed image
-    # image.save(unprocessed_output_file_path)
-
     # Process the image
-    processed_image = process_image(unprocessed_output_file_path, processed_output_file_path)
+    processed_image = process_image(image, processed_output_file_path)
 
     # If the image was processed successfully, save it
     if processed_image is not None:
@@ -36,7 +33,6 @@ def process_and_save_image(image, unprocessed_output_file_path, processed_output
         processed_image.save(processed_output_file_path)
     else:
         print(f"Image for application_id {application_id} was not processed due to low resolution.")
-
 
 def get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longitude, application_id):
     # Define the base URL for the Bing Maps Static API
@@ -106,10 +102,10 @@ def get_bing_map_image_point(center_latitude, center_longitude, application_id):
 
 
 # Read the CSV file and get the first X rows for debugging purposes
-df = pd.read_csv('creative_coding/data/fm_contours_sample.csv').head(50)
+# df = pd.read_csv('data/fm_contours_sample.csv').head(50)
 
 # read the full csv
-# df = pd.read_csv('creative_coding/data/fm_contours_sample.csv')
+df = pd.read_csv('data/fm_contours_sample.csv')
 
 # Loop over each row in the DataFrame
 for index, row in df.iterrows():

@@ -2,9 +2,9 @@ from PIL import Image
 import numpy as np
 
 # Process the image using Floyd-Steinberg error diffusion
-def process_image(image_path, output_path):
+def process_image(image, output_path):
     # Open the image
-    image = Image.open(image_path)
+    # image = Image.open(image_path)
     
     # Check the input image resolution
     min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
