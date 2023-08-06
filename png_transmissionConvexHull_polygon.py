@@ -11,7 +11,7 @@ def simplify_polyline(coordinates, tolerance=0.01):
     return list(simplified_line.coords)
 
 # Create the output directory if it doesn't exist
-output_dir = 'output/polyline_images'
+output_dir = 'output/polygon_images'
 os.makedirs(output_dir, exist_ok=True)
 
 # Specify the chunk size for reading the CSV
@@ -50,9 +50,9 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_c
             # Create a new figure
             plt.figure(figsize=(5, 5), dpi=100)
 
-            # Plot the polyline
+            # Plot the filled polygon
             xs, ys = zip(*simplified_locations)
-            plt.plot(xs, ys, color='blue', linewidth=2)
+            plt.fill(xs, ys, color='blue', alpha=0.5)  # You can adjust the color and alpha (transparency) as needed
 
             # Remove axes
             plt.axis('off')
@@ -65,7 +65,7 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_c
 
             # Save the figure as a PNG image with the name based on the application_id
             application_id = row['application_id']
-            plt.savefig(f'output/polyline_images/{application_id}.png', transparent=True)
+            plt.savefig(f'output/polygon_images/{application_id}.png', transparent=True)
 
             # Close the figure to free up memory
             plt.close()
