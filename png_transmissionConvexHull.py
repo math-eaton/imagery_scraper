@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
 from shapely.geometry import LineString
 from tqdm import tqdm
 
@@ -10,10 +9,6 @@ def simplify_polyline(coordinates, tolerance=0.01):
     simplified_line = line.simplify(tolerance, preserve_topology=False)
     return list(simplified_line.coords)
 
-# Create the output directory if it doesn't exist
-output_dir = 'output/polyline_images'
-os.makedirs(output_dir, exist_ok=True)
-
 # Specify the chunk size for reading the CSV
 chunksize = 100
 
@@ -22,7 +17,7 @@ total_rows = sum(1 for _ in open('data/FM_service_contour_current.csv'))  # Coun
 total_chunks = total_rows // chunksize + 1  # Calculate the total number of chunks
 
 # Load the data in chunks and track progress with tqdm
-for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_current.csv', chunksize=chunksize, nrows=200)), total=total_chunks, desc='Total CSV'):
+for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_current.csv', chunksize=chunksize, nrows=300)), total=total_chunks, desc='Total CSV'):
     chunk_rows = len(df_chunk)  # Number of rows in the current chunk
     for _, row in tqdm(df_chunk.iterrows(), total=chunk_rows, desc='Processing Chunk', leave=False):
         # Get columns named '0', '1', ..., '359' and drop missing values
@@ -54,9 +49,6 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_c
             xs, ys = zip(*simplified_locations)
             plt.plot(xs, ys, color='blue', linewidth=2)
 
-            # Remove axes
-            plt.axis('off')
-
             # Set the extent of the plot to match the extent of the polyline feature
             min_x, min_y = min(xs), min(ys)
             max_x, max_y = max(xs), max(ys)
@@ -65,7 +57,7 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv('data/FM_service_contour_c
 
             # Save the figure as a PNG image with the name based on the application_id
             application_id = row['application_id']
-            plt.savefig(f'output/polyline_images/{application_id}.png', transparent=True)
+            plt.savefig(f'output/polyline_images/{application_id}.png')
 
             # Close the figure to free up memory
             plt.close()
