@@ -25,9 +25,14 @@ len_of_file = file_len(input_file_path)
 print(len_of_file)
 
 # Skipping every Nth row
-N = 10  # Change this value to your desired sampling rate
+N = 25  # sample rate
 skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, N))
 print(skipped)
+
+df = pd.read_csv(input_file_path, skiprows=skipped)
+
+# Sort the DataFrame by 'application_id' in ascending order
+df = df.sort_values(by='application_id')
 
 # Specify the chunk size for reading the CSV
 chunksize = 100
@@ -66,7 +71,27 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv(input_file_path, skiprows=
 
             # Plot the polyline
             xs, ys = zip(*simplified_locations)
-            plt.plot(xs, ys, color='blue', linewidth=2)
+            plt.plot(xs, ys, color='black', linewidth=1)
+
+            # Define the scaling factor
+            scaling_factor = 0.98
+
+            # Calculate the center point of the original polyline
+            center_x = sum(xs) / len(xs)
+            center_y = sum(ys) / len(ys)
+
+            # Calculate the scaled coordinates
+            scaled_xs = [(x - center_x) * scaling_factor + center_x for x in xs]
+            scaled_ys = [(y - center_y) * scaling_factor + center_y for y in ys]
+
+
+            # Plot a scaled polyline to give an offset effect
+            plt.plot(scaled_xs, scaled_ys, color='red', linewidth=1) 
+
+
+            # Plot the filled polygon
+            # xs, ys = zip(*simplified_locations)
+            # plt.fill(xs, ys, color='blue', alpha=0.1) 
 
             buffer = 0.001  # You can adjust this value
 
@@ -87,3 +112,7 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv(input_file_path, skiprows=
             # Save the figure as a PNG image with the name based on the application_id
             application_id = row['application_id']
             plt.savefig(f'output/polyline_images/{application_id}.png')
+
+            # Close the figure to free up memory
+            plt.close()
+

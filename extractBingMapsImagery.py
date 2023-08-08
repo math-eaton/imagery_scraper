@@ -158,11 +158,11 @@ len_of_file = file_len(input_file_path)
 print(len_of_file)
 
 # Skipping every Nth row
-skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, 25))
+N = 25  # sample rate
+skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, N))
 print(skipped)
 
 df = pd.read_csv(input_file_path, skiprows=skipped)
-
 
 # Sort the DataFrame by 'application_id' in ascending order
 df = df.sort_values(by='application_id')
