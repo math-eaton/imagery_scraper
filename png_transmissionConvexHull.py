@@ -67,31 +67,26 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv(input_file_path, skiprows=
         # Check if simplified_locations is empty before creating the plot
         if simplified_locations:
             # Create a new figure
-            plt.figure(figsize=(5, 5), dpi=100)
+            plt.figure(figsize=(8, 8), dpi=100)
 
             # Plot the polyline
             xs, ys = zip(*simplified_locations)
-            plt.plot(xs, ys, color='black', linewidth=1)
-
-            # Define the scaling factor
-            scaling_factor = 0.98
+            plt.plot(xs, ys, color='black', linewidth=0.8)
 
             # Calculate the center point of the original polyline
             center_x = sum(xs) / len(xs)
             center_y = sum(ys) / len(ys)
 
-            # Calculate the scaled coordinates
-            scaled_xs = [(x - center_x) * scaling_factor + center_x for x in xs]
-            scaled_ys = [(y - center_y) * scaling_factor + center_y for y in ys]
+            # Define the scaling factors
+            scaling_factors = np.linspace(1.0, 0.01, num=20)  # You can adjust the number of contours
 
+            for scaling_factor in scaling_factors:
+                # Calculate the scaled coordinates
+                scaled_xs = [(x - center_x) * scaling_factor + center_x for x in xs]
+                scaled_ys = [(y - center_y) * scaling_factor + center_y for y in ys]
 
-            # Plot a scaled polyline to give an offset effect
-            plt.plot(scaled_xs, scaled_ys, color='red', linewidth=1) 
-
-
-            # Plot the filled polygon
-            # xs, ys = zip(*simplified_locations)
-            # plt.fill(xs, ys, color='blue', alpha=0.1) 
+                # Plot a scaled polyline to give an offset effect
+                plt.plot(scaled_xs, scaled_ys, color='black', linewidth=1)
 
             buffer = 0.001  # You can adjust this value
 
@@ -115,4 +110,3 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv(input_file_path, skiprows=
 
             # Close the figure to free up memory
             plt.close()
-

@@ -1,5 +1,6 @@
 from PIL import Image
 import numpy as np
+import os
 
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image, output_path):
@@ -52,21 +53,21 @@ def process_image(image, output_path):
     data[white_areas] = [255, 255, 255, 0]
     image = Image.fromarray(data)
 
-    # Crop the outer 2%
-    width, height = image.size
-    left = width * 0.02
-    top = height * 0.02
-    right = width * 0.98
-    bottom = height * 0.98
-    image = image.crop((left, top, right, bottom))
+    # # Crop the outer 2%
+    # width, height = image.size
+    # left = width * 0.02
+    # top = height * 0.02
+    # right = width * 0.98
+    # bottom = height * 0.98
+    # image = image.crop((left, top, right, bottom))
 
-    # Resize the image (post-dither) using nearest neighbor
-    size = (1200, 1200)  # Set your desired size here
+    # Resize the image (post-dither) using a defined interpolation method - NEAREST, BILINEAR, BICUBIC
+    size = (800, 800)  # Set your desired size here
     # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
-    print("rescaling...")
+    print(f"rescaling to {size} pixels")
 
     # Save the processed image
-    image.save(output_path)
+    image.save(output_path, optimize=True)
 
     return image
