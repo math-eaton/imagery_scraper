@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from process_imagery import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
+from tqdm import tqdm
 
 # map config
 map_size = "500,500"
@@ -140,9 +141,13 @@ def get_bing_map_image_point(center_latitude, center_longitude, application_id):
         print(f"Failed to get map image: {response.content}")
 
 
-# Read the CSV file and get the first X rows
+# read the full csv
+# df = pd.read_csv(input_file_path)
+
+# read the CSV file and get the first n rows
 # df = pd.read_csv(input_file_path).head(50)
 
+# sample every nth row
 def file_len(fname):
     with open(fname) as f:
         for i, l in enumerate(f):
@@ -152,20 +157,18 @@ def file_len(fname):
 len_of_file = file_len(input_file_path)
 print(len_of_file)
 
-# Skipping every 10th row, so using 10 as the step in arange
-skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, 500))
+# Skipping every Nth row
+skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, 25))
 print(skipped)
 
 df = pd.read_csv(input_file_path, skiprows=skipped)
 
-# read the full csv
-# df = pd.read_csv(input_file_path)
 
 # Sort the DataFrame by 'application_id' in ascending order
 df = df.sort_values(by='application_id')
 
-# Loop over each row in the DataFrame
-for index, row in df.iterrows():
+# Loop over each row in the DataFrame with tqdm to display progress bar
+for index, row in tqdm(df.iterrows(), total=df.shape[0]):
     # Initialize min and max coordinates for each row
     min_latitude = 90
     max_latitude = -90
