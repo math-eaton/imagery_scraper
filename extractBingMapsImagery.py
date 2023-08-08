@@ -3,6 +3,7 @@ import requests
 import os
 import io
 import config
+import numpy as np
 from PIL import Image
 from process_imagery import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -12,10 +13,12 @@ map_size = "500,500"
 map_style = "Aerial"
 zoom_level = 15
 
+input_file_path = 'data/processed/FM_service_contour_current_processed.csv'
 unprocessed_output_dir_area = "output/bing_imagery/area"
 processed_output_dir_area = "output/processed_imagery/area"
 unprocessed_output_dir_point = "output/bing_imagery/point"
 processed_output_dir_point = "output/processed_imagery/point"
+
 
 # Create directories if they don't exist
 os.makedirs(unprocessed_output_dir_area, exist_ok=True)
@@ -137,11 +140,26 @@ def get_bing_map_image_point(center_latitude, center_longitude, application_id):
         print(f"Failed to get map image: {response.content}")
 
 
-# Read the CSV file and get the first X rows for debugging purposes
-# df = pd.read_csv('data/fm_contours_sample.csv').head(50)
+# Read the CSV file and get the first X rows
+# df = pd.read_csv(input_file_path).head(50)
+
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+len_of_file = file_len(input_file_path)
+print(len_of_file)
+
+# Skipping every 10th row, so using 10 as the step in arange
+skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, 500))
+print(skipped)
+
+df = pd.read_csv(input_file_path, skiprows=skipped)
 
 # read the full csv
-df = pd.read_csv('data/processed/FM_service_contour_current_processed.csv')
+# df = pd.read_csv(input_file_path)
 
 # Sort the DataFrame by 'application_id' in ascending order
 df = df.sort_values(by='application_id')
