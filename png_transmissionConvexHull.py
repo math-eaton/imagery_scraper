@@ -106,7 +106,7 @@ for chunk_idx, df_chunk in tqdm(enumerate(pd.read_csv(input_file_path, skiprows=
 
             # Save the figure as a PNG image with the name based on the application_id
             application_id = row['application_id']
-            plt.savefig(f'output/polyline_images/{application_id}.png')
+            plt.savefig(f'output/polyline_images/{application_id}.png', transparent=True)
 
             # Close the figure to free up memory
             plt.close()
