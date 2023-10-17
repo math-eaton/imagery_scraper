@@ -11,7 +11,7 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
-def slice_large_geojson_by_size(input_file, output_file, max_size_mb=10):
+def slice_large_geojson_by_size(input_file, output_file, max_size_mb=100):
     """
     Slices a large GeoJSON file by reading it in chunks and writing a subset based on file size.
 
