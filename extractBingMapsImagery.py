@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import requests
 import os
@@ -9,24 +10,10 @@ from process_imagery import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
-# map config
-map_size = "500,500"
-map_style = "Aerial"
-zoom_level = 15
-
-input_file_path = 'data/processed/FM_service_contour_current_processed.csv'
-unprocessed_output_dir_area = "output/bing_imagery/area"
-processed_output_dir_area = "output/processed_imagery/area"
-unprocessed_output_dir_point = "output/bing_imagery/point"
-processed_output_dir_point = "output/processed_imagery/point"
-
-
-# Create directories if they don't exist
-os.makedirs(unprocessed_output_dir_area, exist_ok=True)
-os.makedirs(processed_output_dir_area, exist_ok=True)
-os.makedirs(unprocessed_output_dir_point, exist_ok=True)
-os.makedirs(processed_output_dir_point, exist_ok=True)
-
+# Function to create directories if they don't exist
+def create_directories(*dirs):
+    for dir_path in dirs:
+        os.makedirs(dir_path, exist_ok=True)
 
 def process_and_save_image(image, unprocessed_output_file_path, processed_output_file_path, application_id):
     # Process the image
@@ -40,7 +27,7 @@ def process_and_save_image(image, unprocessed_output_file_path, processed_output
         print(f"Image for application_id {application_id} was not processed due to low resolution.")
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longitude, application_id):
+def get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longitude, application_id, map_style, map_size):
     # Define the base URL for the Bing Maps Static API
     base_url = "https://dev.virtualearth.net/REST/v1/Imagery/Map/"
 
@@ -90,7 +77,7 @@ def get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longi
         print(f"Failed to get map image: {response.content}")
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def get_bing_map_image_point(center_latitude, center_longitude, application_id):
+def get_bing_map_image_point(center_latitude, center_longitude, application_id, map_style, map_size, zoom_level):
     # Define the base URL for the Bing Maps Static API
     base_url = "https://dev.virtualearth.net/REST/v1/Imagery/Map/"
 
@@ -140,67 +127,64 @@ def get_bing_map_image_point(center_latitude, center_longitude, application_id):
     else:
         print(f"Failed to get map image: {response.content}")
 
+def main(args):
+    # Create output directories
+    create_directories(
+        args.unprocessed_output_dir_area,
+        args.processed_output_dir_area,
+        args.unprocessed_output_dir_point,
+        args.processed_output_dir_point
+    )
 
-# read the full csv
-# df = pd.read_csv(input_file_path)
+    # Loop over each row in the DataFrame with tqdm to display progress bar
+    for index, row in tqdm(df.iterrows(), total=df.shape[0]):
+        # Initialize min and max coordinates for each row
+        min_latitude = 90
+        max_latitude = -90
+        min_longitude = 180
+        max_longitude = -180
 
-# read the CSV file and get the first n rows
-# df = pd.read_csv(input_file_path).head(50)
+        # Loop over each column in the row
+        for i in range(360):
 
-# sample every nth row
-def file_len(fname):
-    with open(fname) as f:
-        for i, l in enumerate(f):
-            pass
-    return i + 1
+            # Check if the column value is a valid latitude/longitude pair
+            if ',' in row[str(i)]:
+                try:
+                    # Get the coordinates from the column
+                    latitude, longitude = map(float, row[str(i)].split(','))
 
-len_of_file = file_len(input_file_path)
-print(len_of_file)
+                    # Update min and max coordinates
+                    min_latitude = min(min_latitude, latitude)
+                    max_latitude = max(max_latitude, latitude)
+                    min_longitude = min(min_longitude, longitude)
+                    max_longitude = max(max_longitude, longitude)
+                except ValueError:
+                    # Ignore the column if it's not a valid latitude/longitude pair
+                    pass
 
-# Skipping every Nth row
-N = 25  # sample rate
-skipped = np.setdiff1d(np.arange(len_of_file), np.arange(0, len_of_file, N))
-print(skipped)
+        # Download the image for these coordinates
+        get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longitude, row['application_id'], args.map_style, args.map_size)
 
-df = pd.read_csv(input_file_path, skiprows=skipped)
+        # Get the coordinates from the 'transmitter_site' column
+        # Assuming the column contains strings like '47.6097,-122.3331'
+        center_latitude, center_longitude = map(float, row['transmitter_site'].split(','))
 
-# Sort the DataFrame by 'application_id' in ascending order
-df = df.sort_values(by='application_id')
+        # Download the image for these coordinates
+        get_bing_map_image_point(center_latitude, center_longitude, row['application_id'], args.map_style, args.map_size, args.zoom_level)
 
-# Loop over each row in the DataFrame with tqdm to display progress bar
-for index, row in tqdm(df.iterrows(), total=df.shape[0]):
-    # Initialize min and max coordinates for each row
-    min_latitude = 90
-    max_latitude = -90
-    min_longitude = 180
-    max_longitude = -180
+    print("done.")
 
-    # Loop over each column in the row
-    for i in range(360):
-
-        # Check if the column value is a valid latitude/longitude pair
-        if ',' in row[str(i)]:
-            try:
-                # Get the coordinates from the column
-                latitude, longitude = map(float, row[str(i)].split(','))
-
-                # Update min and max coordinates
-                min_latitude = min(min_latitude, latitude)
-                max_latitude = max(max_latitude, latitude)
-                min_longitude = min(min_longitude, longitude)
-                max_longitude = max(max_longitude, longitude)
-            except ValueError:
-                # Ignore the column if it's not a valid latitude/longitude pair
-                pass
-
-    # Download the image for these coordinates
-    get_bing_map_image_area(min_latitude, min_longitude, max_latitude, max_longitude, row['application_id'])
-
-    # Get the coordinates from the 'transmitter_site' column
-    # Assuming the column contains strings like '47.6097,-122.3331'
-    center_latitude, center_longitude = map(float, row['transmitter_site'].split(','))
-
-    # Download the image for these coordinates
-    get_bing_map_image_point(center_latitude, center_longitude, row['application_id'])
-
-print("done.")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process and plot polyline data from a CSV file")
+    parser.add_argument("input_file", help="Path to the input CSV file")
+    parser.add_argument("--sample-rate", type=int, default=10, help="Sample rate for skipping rows")
+    parser.add_argument("--chunk-size", type=int, default=100, help="Chunk size for reading the CSV")
+    parser.add_argument("--unprocessed-output-dir-area", default="scraping/satellite_imagery/output/unprocessed/area", help="Output directory for unprocessed area images")
+    parser.add_argument("--processed-output-dir-area", default="scraping/satellite_imagery/output/processed/area", help="Output directory for processed area images")
+    parser.add_argument("--unprocessed-output-dir-point", default="scraping/satellite_imagery/output/unprocessed/point", help="Output directory for unprocessed point images")
+    parser.add_argument("--processed-output-dir-point", default="scraping/satellite_imagery/output/processed/point", help="Output directory for processed point images")
+    parser.add_argument("--map-style", default="Aerial", help="Bing Maps style (e.g., Aerial)")
+    parser.add_argument("--map-size", default="500,500", help="Map size in pixels (e.g., 500,500)")
+    parser.add_argument("--zoom-level", type=int, default=15, help="Bing Maps zoom level")
+    args = parser.parse_args()
+    main(args)

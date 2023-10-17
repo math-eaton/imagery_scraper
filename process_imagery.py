@@ -3,35 +3,19 @@ import numpy as np
 import os
 
 # Process the image using Floyd-Steinberg error diffusion
-def process_image(image, output_path):
-    # Open the image
-    # image = Image.open(image_path)
-    
+def process_image(image, output_path, aspect_ratio=None, final_size=(800, 800)):
     # Check the input image resolution
     min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
     width, height = image.size
     if width < min_resolution or height < min_resolution:
         print(f"Image for application_id {os.path.basename(image_path).split('.')[0]} was not processed due to low resolution.")
         return None
-    
-    # Resize the image (pre-dither) while maintaining aspect ratio
-    size = (2048, 2048)  # Set your desired size here
-    image.thumbnail(size, Image.BILINEAR)
-    
-    # Crop the image to desired aspect ratio
-    # width, height = image.size
-    # new_size = min(width, height)
 
-    # left = (width - new_size)/2
-    # top = (height - new_size)/2
-    # right = (width + new_size)/2
-    # bottom = (height + new_size)/2
-
-    # # Calculate and print the aspect ratio
-    # aspect_ratio = new_size / new_size  # e.g. square is 1.0
-
-    # image = image.crop((left, top, right, bottom))
-    # print(f"cropping to aspect ratio {aspect_ratio}")
+    # Resize the image (pre-dither) while maintaining aspect ratio if aspect_ratio is specified
+    if aspect_ratio:
+        new_width = int(min(width, height) * aspect_ratio)
+        new_height = int(min(width, height))
+        image = image.resize((new_width, new_height), Image.BILINEAR)
 
     # Convert the image to grayscale
     image = image.convert('L')
@@ -53,19 +37,22 @@ def process_image(image, output_path):
     data[white_areas] = [255, 255, 255, 0]
     image = Image.fromarray(data)
 
-    # # Crop the outer 2%
-    # width, height = image.size
-    # left = width * 0.02
-    # top = height * 0.02
-    # right = width * 0.98
-    # bottom = height * 0.98
-    # image = image.crop((left, top, right, bottom))
-
     # Resize the image (post-dither) using a defined interpolation method - NEAREST, BILINEAR, BICUBIC
-    size = (800, 800)  # Set your desired size here
-    # size = (1200, 900)  # Size for video
-    image = image.resize(size, Image.NEAREST)
-    print(f"rescaling to {size} pixels")
+    image = image.resize(final_size, Image.NEAREST)
+    print(f"rescaling to {final_size} pixels")
+
+    # Crop the outer 2% after the final resize
+    if aspect_ratio:
+        width, height = image.size
+        crop_percentage = 2  # Crop 2% from each edge
+        crop_pixels = int(min(width, height) * (crop_percentage / 100))
+
+        left = crop_pixels
+        top = crop_pixels
+        right = width - crop_pixels
+        bottom = height - crop_pixels
+
+        image = image.crop((left, top, right, bottom))
 
     # Save the processed image
     image.save(output_path, optimize=True)
