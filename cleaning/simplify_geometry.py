@@ -1,7 +1,7 @@
 import geopandas as gpd
 from tqdm import tqdm
 
-def simplify_geojson(input_file, output_file, tolerance=0.01):
+def simplify_geojson(input_file, output_file, tolerance=0.005):
     """
     Simplify the geometry of a GeoJSON file using the Douglas-Peucker algorithm.
 
