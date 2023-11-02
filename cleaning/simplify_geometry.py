@@ -1,44 +1,42 @@
+import os
 import geopandas as gpd
 from tqdm import tqdm
 
-def simplify_geojson(input_file, output_file, tolerance=0.005):
+def simplify_geojson(input_dir, tolerance=0.0005):
     """
-    Simplify the geometry of a GeoJSON file using the Douglas-Peucker algorithm.
+    Simplify the geometry of GeoJSON files from a directory using the Douglas-Peucker algorithm.
+    Outputs simplified GeoJSON files to a subdirectory called 'simplified' within the input directory.
+    Each output file is named after the original with "_simplified" appended.
 
-    :param input_file: Path to the input GeoJSON file.
-    :param output_file: Path where the simplified GeoJSON will be saved.
+    :param input_dir: Directory containing the GeoJSON files.
     :param tolerance: Tolerance parameter for the simplification. Higher values mean more simplification.
     """
-    
-    # Read the GeoDataFrame from the input file
-    gdf = gpd.read_file(input_file)
-    
-    # Get the number of features for the progress bar
-    total_features = len(gdf)
-    
-    # Create a tqdm progress bar with ASCII format
-    pbar = tqdm(total=total_features, bar_format='{l_bar}{bar:30}{r_bar}{bar:-10b}', ascii=True, desc="Simplifying")
-    
-    # Simplify the geometry with tqdm updates
-    gdf['geometry'] = gdf['geometry'].apply(lambda geom: _simplify_with_progress(geom, tolerance, pbar))
-    
-    # Close the progress bar
-    pbar.close()
 
-    # Save the simplified GeoDataFrame to the output file
-    gdf.to_file(output_file, driver="GeoJSON")
+    # Create the 'simplified' subdirectory if it doesn't exist
+    simplified_dir = os.path.join(input_dir, 'simplified')
+    os.makedirs(simplified_dir, exist_ok=True)
 
-def _simplify_with_progress(geom, tolerance, pbar):
-    """
-    Helper function to simplify a geometry and update the tqdm progress bar.
-    """
-    simplified_geom = geom.simplify(tolerance, preserve_topology=True)
-    pbar.update(1)
-    return simplified_geom
+    # List all the GeoJSON files in the input directory
+    geojson_files = [f for f in os.listdir(input_dir) if f.endswith('.geojson')]
+
+    # Process each GeoJSON file
+    for file in tqdm(geojson_files, desc="Processing GeoJSON files"):
+        print(f"Processing: {file}")
+        # Read the GeoJSON file
+        gdf = gpd.read_file(os.path.join(input_dir, file))
+        
+        # Simplify the geometry of each feature
+        gdf['geometry'] = gdf['geometry'].simplify(tolerance, preserve_topology=True)
+        
+        # Construct the output filename and path
+        output_filename = f"{os.path.splitext(file)[0]}_simplified.geojson"
+        output_path = os.path.join(simplified_dir, output_filename)
+
+        # Save the simplified GeoDataFrame to the output file
+        gdf.to_file(output_path, driver='GeoJSON')
+        print(f"Simplified GeoJSON saved to: {output_path}")
 
 if __name__ == "__main__":
-    input_geojson = "data/processed/contour_maps/sliced_USA_contours.geojson"
-    output_geojson = "data/processed/contour_maps/sliced_USA_contours_simplified.geojson"
-    
-    simplify_geojson(input_geojson, output_geojson)
-    print('done.')
+    input_directory = "/Users/matthewheaton/Documents/GitHub/3D_mapping/public/data"  # Replace with the path to your input directory
+    simplify_geojson(input_directory)
+    print('All GeoJSON files have been simplified.')
