@@ -2,7 +2,7 @@ import geopandas as gpd
 from tqdm import tqdm
 from shapely.geometry import LineString, MultiLineString
 
-def downsample_geojson(input_file, output_file, downsample_factor=7):
+def downsample_geojson(input_file, output_file, downsample_factor=10):
     """
     Downsample the coordinates of a GeoJSON file.
 
@@ -52,8 +52,8 @@ def _downsample_with_progress(geom, factor, pbar):
 
 
 if __name__ == "__main__":
-    input_geojson = "data/processed/contour_maps/sliced_USA_contours.geojson"
-    output_geojson = "data/processed/contour_maps/sliced_USA_contours_downsampled.geojson"
+    input_geojson = "/Users/matthewheaton/Documents/GitHub/imagery_scraper/data/raw/NYS_elevContour_SimplifyLine_1500mCurve_downsample30_20231120_low_detail.geojson"
+    output_geojson = "data/processed/contour_maps/simplified/NYS_elevContour_SimplifyLine_1500mCurve_downsampleExtra_20231120_low_detail.geojson"
     
     downsample_geojson(input_geojson, output_geojson)
     print('done.')

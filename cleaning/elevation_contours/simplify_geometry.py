@@ -2,7 +2,7 @@ import os
 import geopandas as gpd
 from tqdm import tqdm
 
-def simplify_geojson(input_dir, tolerance=0.0005):
+def simplify_geojson(input_dir, tolerance=0.0006):
     """
     Simplify the geometry of GeoJSON files from a directory using the Douglas-Peucker algorithm.
     Outputs simplified GeoJSON files to a subdirectory called 'simplified' within the input directory.
@@ -37,6 +37,6 @@ def simplify_geojson(input_dir, tolerance=0.0005):
         print(f"Simplified GeoJSON saved to: {output_path}")
 
 if __name__ == "__main__":
-    input_directory = "/Users/matthewheaton/Documents/GitHub/3D_mapping/public/data"  # Replace with the path to your input directory
+    input_directory = "data/processed/contour_maps"  # Replace with the path to your input directory
     simplify_geojson(input_directory)
     print('All GeoJSON files have been simplified.')
