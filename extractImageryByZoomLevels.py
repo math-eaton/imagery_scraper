@@ -5,7 +5,7 @@ import os
 import io
 import config
 from PIL import Image
-from process_imagery import process_image
+from process_imagery_halftone import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
@@ -60,7 +60,7 @@ def main(args):
         lat = row['lat']
         lon = row['lon']
         city = row['city']
-        for zoom_level in range(1, 20):
+        for zoom_level in range(3, 20):
             get_bing_map_image(lat, lon, city, zoom_level, args.map_style, args.map_size)
     print("done.")
 

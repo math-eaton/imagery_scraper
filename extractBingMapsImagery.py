@@ -6,7 +6,7 @@ import io
 import config
 import numpy as np
 from PIL import Image
-from process_imagery import process_image
+from process_imagery_floydSteinberg import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
