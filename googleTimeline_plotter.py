@@ -5,23 +5,16 @@ import geopandas as gpd
 import numpy as np
 from collections import defaultdict
 
-# Default fixed map bounds (Brooklyn, NY)
-MAP_BOUNDS = {
-    "lat_min": 40.6,
-    "lat_max": 40.75,
-    "lon_min": -74.05,
-    "lon_max": -73.85,
-}
+# Paths to spatial data
+COASTLINE_PATH = "data/ne_10m_coastline/ne_10m_coastline.shp"
+ROADS_PATH = "data/ne_10m_roads_north_america/ne_10m_roads_north_america.shp"
 
-# Load low-resolution coastline data (Natural Earth 1:10m)
-COASTLINE_PATH = "spatial/data/ne_10m_coastline/ne_10m_coastline.shp"
-
-def load_coastline():
-    """Load coastline shapefile for geographic context."""
+def load_shapefile(path):
+    """Load a shapefile and handle errors."""
     try:
-        return gpd.read_file(COASTLINE_PATH)
+        return gpd.read_file(path)
     except Exception as e:
-        print(f"Error loading coastline: {e}")
+        print(f"Error loading {path}: {e}")
         return None
 
 def parse_timeline(json_file):
@@ -42,7 +35,7 @@ def parse_timeline(json_file):
 
     return daily_routes
 
-def get_global_bounds(daily_routes, margin=0.02):
+def get_global_bounds(daily_routes, margin=0):
     """Compute max bounding box across all routes to ensure consistent aspect ratio."""
     all_lats, all_lons = zip(
         *[(lat, lon) for routes in daily_routes.values() for route in routes for lat, lon in route]
@@ -59,7 +52,7 @@ def get_global_bounds(daily_routes, margin=0.02):
         lon_max + lon_range * margin,
     )
 
-def get_dynamic_bounds(routes, margin=0.02):
+def get_dynamic_bounds(routes, margin=0):
     """Compute bounding box for each day's routes."""
     lats, lons = zip(*[coord for route in routes for coord in route])
     lat_min, lat_max = min(lats), max(lats)
@@ -70,14 +63,15 @@ def get_dynamic_bounds(routes, margin=0.02):
         lat_min - lat_range * margin,
         lat_max + lat_range * margin,
         lon_min - lon_range * margin,
-        lon_max + lon_range * margin,
+        lon_max - lon_range * margin,
     )
 
-def create_frames(daily_routes, output_folder="frames", dynamic_extent=False, add_coastline=False, aspect_ratio="1:1"):
+def create_frames(daily_routes, output_folder="frames", dynamic_extent=False, add_coastline=False, add_roads=False, aspect_ratio="1:1"):
     """Generates high-resolution frames using full timelinePath data."""
     os.makedirs(output_folder, exist_ok=True)
 
-    coastline = load_coastline() if add_coastline else None
+    coastline = load_shapefile(COASTLINE_PATH) if add_coastline else None
+    roads = load_shapefile(ROADS_PATH) if add_roads else None
     global_bounds = get_global_bounds(daily_routes)
 
     # Aspect ratio dictionary
@@ -97,7 +91,7 @@ def create_frames(daily_routes, output_folder="frames", dynamic_extent=False, ad
     fig_size = aspect_ratios[aspect_ratio]
 
     for date, routes in sorted(daily_routes.items()):
-        fig, ax = plt.subplots(figsize=fig_size, dpi=300)
+        fig, ax = plt.subplots(figsize=fig_size, dpi=150)
 
         if dynamic_extent:
             bounds = get_dynamic_bounds(routes)
@@ -150,33 +144,34 @@ def create_frames(daily_routes, output_folder="frames", dynamic_extent=False, ad
         if add_coastline and coastline is not None:
             coastline.plot(color="#aaaaaa", alpha=0.666, linewidth=0.5, ax=ax)
 
+        # Plot roads
+        if add_roads and roads is not None:
+            clipped_roads = roads.cx[lon_min:lon_max, lat_min:lat_max]
+            if not clipped_roads.empty:
+                clipped_roads.plot(color="#797979", alpha=0.5, linewidth=0.35, ax=ax)
+
         # **Efficiently plot the full trajectory**
         for route_points in routes:
             route_array = np.array(route_points)
             ax.plot(route_array[:, 1], route_array[:, 0], "w-", linewidth=1.2, alpha=0.9)  # High-precision paths
 
-
         # Add date title
         ax.set_title(date, color="#ffffff", alpha=0.8, family="monospace", fontsize=24, fontweight="normal", stretch="ultra-expanded", loc="left", y=0, pad=0)
 
-
         # Save frame with consistent resolution
         frame_path = os.path.join(output_folder, f"{date}.png")
-            # adjust transparent to true if want no bg
-        fig.savefig(frame_path, dpi=300, bbox_inches="tight", pad_inches=0.1, transparent=False, format="png")
+        fig.savefig(frame_path, dpi=150, bbox_inches="tight", pad_inches=0, transparent=False, format="png")
         plt.close(fig)
 
     print(f"Frames saved in {output_folder}")
 
-def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=False, aspect_ratio="1:1"):
+def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=False, add_roads=False, aspect_ratio="1:1"):
     """Generates daily route frames from Google Takeout Timeline JSON."""
     daily_routes = parse_timeline(json_file)
-    create_frames(daily_routes, output_folder=output_folder, dynamic_extent=dynamic_extent, add_coastline=add_coastline, aspect_ratio=aspect_ratio)
+    create_frames(daily_routes, output_folder=output_folder, dynamic_extent=dynamic_extent, add_coastline=add_coastline, add_roads=add_roads, aspect_ratio=aspect_ratio)
     print(f"Frames saved in '{output_folder}'")
 
-# Run with defined aspect ratio (format: "9:16")
+# Run with roads & 10m coastline enabled
 if __name__ == "__main__":
-    json_path = "spatial/data/location-history_20250130.json"
-    main(json_path, output_folder="spatial/output/landscape_highRes", dynamic_extent=True, add_coastline=True, aspect_ratio="16:9")
-
-
+    json_path = "data/location-history_20250130.json"
+    main(json_path, output_folder="output/googlePlots/two", dynamic_extent=True, add_coastline=True, add_roads=False, aspect_ratio="9:16")
