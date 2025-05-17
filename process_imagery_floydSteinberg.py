@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Process the image using Floyd-Steinberg error diffusion
-def process_image(image, output_path, aspect_ratio=None, final_size=(640, 640)):
+def process_image(image, output_path, aspect_ratio=None, final_size=(1920, 1920)):
     # Check the input image resolution
     min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
     width, height = image.size

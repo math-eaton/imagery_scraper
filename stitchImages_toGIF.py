@@ -7,6 +7,9 @@ import re
 import numpy as np
 import random
 
+# note that based on optional params, the jitter effect only occurs if
+# the frame disposal method is '3'
+
 def resize_to_center(image, scale, bg_color, jitter=0.75):
     width, height = image.size
     new_width = int(width * scale)
@@ -32,7 +35,7 @@ def create_gif(image_files, gif_path, ping_pong=False, duration=250, disposal=2,
         scale = 1.0
         for img in images:
             scaled_images.append(resize_to_center(img, scale, bg_color))
-            scale *= random.uniform(0.96, 1.02)
+            scale *= random.uniform(0.96, 1.01)
         images = scaled_images
     
     images[0].save(
@@ -62,7 +65,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500, ping_pong=False, dur
             for img in images:
                 pil_img = Image.fromarray(img)
                 scaled_images.append(resize_to_center(pil_img, scale, bg_color))
-                scale *= random.uniform(0.96, 1.02)
+                scale *= random.uniform(0.96, 1.01)
             images = [np.array(img) for img in scaled_images]
         temp_gif_path = f"temp_{i}.gif"
         imageio.mimsave(temp_gif_path, images, 'GIF', duration=duration / 1000.0, loop=0, disposal=disposal)

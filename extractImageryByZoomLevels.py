@@ -9,6 +9,9 @@ from process_imagery_halftone import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
+## original use case: 
+## docents tour 2024 poster gifs
+
 def create_directories(*dirs):
     for dir_path in dirs:
         os.makedirs(dir_path, exist_ok=True)
@@ -60,14 +63,14 @@ def main(args):
         lat = row['lat']
         lon = row['lon']
         city = row['city']
-        for zoom_level in range(3, 20):
+        for zoom_level in range(5, 20):
             get_bing_map_image(lat, lon, city, zoom_level, args.map_style, args.map_size)
     print("done.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process and extract images from Bing Maps API")
     parser.add_argument("input_file", help="Path to the input CSV file")
-    parser.add_argument("--output-dir", default="output/tour_2024", help="Output directory for images")
+    parser.add_argument("--output-dir", default="output/tour_2024_2", help="Output directory for images")
     parser.add_argument("--map-style", default="Aerial", help="Bing Maps style (e.g., Aerial)")
     parser.add_argument("--map-size", default="1280,1280", help="Map size in pixels (e.g., 500,500)")
     args = parser.parse_args()
