@@ -19,6 +19,43 @@ def load_shapefile(path):
         print(f"Error loading {path}: {e}")
         return None
 
+def connect_all_segments(routes):
+    """
+    Connect all route segments within a day into a single continuous path.
+    Simply connects the end of each segment to the start of the next with a straight line.
+    
+    Args:
+        routes: List of route segments (each segment is a list of (lat, lon) tuples)
+    
+    Returns:
+        A list containing a single flattened list of all points with connecting segments
+    """
+    if not routes:
+        return []
+    
+    if len(routes) == 1:
+        return routes  # Keep it as a list of routes for consistency
+    
+    connected_points = []
+    
+    # Process each segment
+    for i, route in enumerate(routes):
+        # Add all points from current segment
+        connected_points.extend(route)
+        
+        # If there's a next segment, add a connecting line
+        if i < len(routes) - 1:
+            next_route = routes[i + 1]
+            last_point = route[-1]
+            next_point = next_route[0]
+            
+            # Add the connecting segment (just the endpoints - matplotlib will draw the line)
+            # We already have last_point in the list, so we just need to add next_point
+            # But next_point will be added when we process the next route
+            # So we don't need to add anything extra - the line will be drawn automatically
+    
+    return [connected_points]
+
 def parse_timeline(json_file):
     """Extract fine-grained GPS paths from Google Takeout timeline data."""
     with open(json_file, "r", encoding="utf-8") as file:
@@ -57,7 +94,7 @@ def get_bounding_box(routes, margin=0.02):
 
     return lat_min, lat_max, lon_min, lon_max
 
-def create_frames(daily_routes, output_folder="frames", add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=300):
+def create_frames(daily_routes, output_folder="frames", add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=300, connect_segments=True):
     """Generates high-resolution frames ensuring aspect ratio conformity before clipping spatial layers."""
     os.makedirs(output_folder, exist_ok=True)
 
@@ -70,10 +107,10 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
         "1:1": (6, 6),
         "9:16": (9, 16),
         "16:9": (16, 9),
-        "4:5": (4, 5),
+        "4:5": (8, 10),
         "3:4": (12, 16),
         "4:3": (16, 12),
-        "2:3": (2, 3),
+        "2:3": (8, 12),
     }
 
     if aspect_ratio not in aspect_ratios:
@@ -87,6 +124,10 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
     last_valid_bounds = None
 
     for date, routes in sorted(daily_routes.items()):
+        # **Connect all route segments into a single continuous path if enabled**
+        if connect_segments:
+            routes = connect_all_segments(routes)
+        
         fig, ax = plt.subplots(figsize=fig_size, dpi=dpi)
 
         # **Step 1: Compute bounding box from timeline paths**
@@ -189,7 +230,7 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
 
     print(f"Frames saved in {output_folder}")
 
-def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=150):
+def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=150, connect_segments=True):
     """Generates daily route frames from Google Takeout Timeline JSON."""
     daily_routes = parse_timeline(json_file)
     create_frames(
@@ -200,11 +241,12 @@ def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=
         aspect_ratio=aspect_ratio,
         margin=margin,  # Pass the margin
         dpi=dpi,        # Pass the dpi
+        connect_segments=connect_segments,  # Pass segment connection flag
     )
     print(f"Frames saved in '{output_folder}'")
 
 # Run with roads & 10m coastline enabled
 if __name__ == "__main__":
     json_path = "data/location-history_20251202.json"
-    main(json_path, output_folder="output/googlePlots/eighteen", add_coastline=True, add_roads=True, aspect_ratio="4:3", margin=0.15, dpi=45)
+    main(json_path, output_folder="output/googlePlots/nineteen", add_coastline=True, add_roads=True, aspect_ratio="4:3", margin=0.15, dpi=45, connect_segments=True)
     
