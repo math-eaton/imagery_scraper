@@ -8,6 +8,7 @@ from shapely.geometry import box
 
 # Paths to spatial data
 COASTLINE_PATH = "data/ne_10m_coastline/ne_10m_coastline.shp"
+# ROADS_PATH = "data/ne_10m_roads/ne_10m_roads.shp"
 ROADS_PATH = "data/ne_10m_roads_north_america/ne_10m_roads_north_america.shp"
 
 def load_shapefile(path):
@@ -70,7 +71,8 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
         "9:16": (9, 16),
         "16:9": (16, 9),
         "4:5": (4, 5),
-        "3:4": (3, 4),
+        "3:4": (12, 16),
+        "4:3": (16, 12),
         "2:3": (2, 3),
     }
 
@@ -152,30 +154,30 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
 
         # **Step 5: Plot clipped coastline**
         if clipped_coastline is not None and not clipped_coastline.empty:
-            clipped_coastline.plot(color="#bdbdbd", alpha=0.55, linewidth=0.75, ax=ax)
+            clipped_coastline.plot(color="#bdbdbd", alpha=0.5, linewidth=0.75, ax=ax)
 
         # **Step 6: Plot clipped roads**
         if clipped_roads is not None and not clipped_roads.empty:
-            clipped_roads.plot(color="#8b8b8b", alpha=0.85, linewidth=0.5, ax=ax)
+            clipped_roads.plot(color="#8b8b8b", alpha=0.666, linewidth=0.666, ax=ax)
 
         # **Step 7: Plot the full trajectory**
         for route_points in routes:
             route_array = np.array(route_points)
-            ax.plot(route_array[:, 1], route_array[:, 0], "w-", linewidth=1.6, alpha=0.9)
+            ax.plot(route_array[:, 1], route_array[:, 0], "w-", linewidth=2.5, alpha=0.8)
 
         # **Step 8: Add date title**
-        ax.set_title(
-            date,
-            color="#ffffff",
-            alpha=0.8,
-            family="monospace",
-            fontsize=24,
-            fontweight="normal",
-            stretch="ultra-expanded",
-            loc="left",
-            y=0,
-            pad=-0,
-        )
+        # ax.set_title(
+        #     date,
+        #     color="#ffffff",
+        #     alpha=0.8,
+        #     family="monospace",
+        #     fontsize=24,
+        #     fontweight="normal",
+        #     stretch="ultra-expanded",
+        #     loc="left",
+        #     y=0,
+        #     pad=-0,
+        # )
 
         # **Step 9: Save the frame while enforcing aspect ratio**
         frame_path = os.path.join(output_folder, f"{date}.png")
@@ -203,6 +205,6 @@ def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=
 
 # Run with roads & 10m coastline enabled
 if __name__ == "__main__":
-    json_path = "data/location-history_20250130.json"
-    main(json_path, output_folder="output/googlePlots/ten", add_coastline=True, add_roads=True, aspect_ratio="9:16", margin=0.1, dpi=50)
+    json_path = "data/location-history_20251202.json"
+    main(json_path, output_folder="output/googlePlots/eighteen", add_coastline=True, add_roads=True, aspect_ratio="4:3", margin=0.15, dpi=45)
     
