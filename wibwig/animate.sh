@@ -1,0 +1,1 @@
+gifsicle -d 9 *.gif > output-0.gif --lossy=250000 --dither=atkinson --loopcount=1 --use-colormap=gray 

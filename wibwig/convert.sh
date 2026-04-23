@@ -1,0 +1,1 @@
+mogrify -format gif *.png && find . -name '*.png' -delete

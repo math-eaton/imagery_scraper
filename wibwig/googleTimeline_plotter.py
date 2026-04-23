@@ -94,8 +94,12 @@ def get_bounding_box(routes, margin=0.02):
 
     return lat_min, lat_max, lon_min, lon_max
 
-def create_frames(daily_routes, output_folder="frames", add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=300, connect_segments=True):
+def create_frames(daily_routes, output_folder="frames", add_path=True, add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=300, connect_segments=True):
     """Generates high-resolution frames ensuring aspect ratio conformity before clipping spatial layers."""
+    # Validate that at least one layer is enabled
+    if not add_path and not add_coastline and not add_roads:
+        raise ValueError("Error: At least one layer must be enabled (add_path, add_coastline, or add_roads)")
+    
     os.makedirs(output_folder, exist_ok=True)
 
     # Load spatial data
@@ -124,24 +128,31 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
     last_valid_bounds = None
 
     for date, routes in sorted(daily_routes.items()):
+        # **Check if there are any actual GPS points for this day**
+        if not routes or all(not route for route in routes):
+            print(f"Skipping {date}: No GPS data available.")
+            continue
+        
         # **Connect all route segments into a single continuous path if enabled**
         if connect_segments:
             routes = connect_all_segments(routes)
+        
+        # **Double-check after connection that we have points**
+        if not routes or all(not route for route in routes):
+            print(f"Skipping {date}: No GPS data after connection.")
+            continue
         
         fig, ax = plt.subplots(figsize=fig_size, dpi=dpi)
 
         # **Step 1: Compute bounding box from timeline paths**
         bbox = get_bounding_box(routes, margin)
 
-        if bbox is None:  # No movement, reuse last valid bounding box
-            if last_valid_bounds is None:
-                print(f"Skipping {date}: No previous valid bounding box available.")
-                plt.close(fig)
-                continue
-            else:
-                bbox = last_valid_bounds
-        else:
-            last_valid_bounds = bbox  # Update last valid bounding box
+        if bbox is None:  # No movement detected
+            print(f"Skipping {date}: No valid bounding box could be computed.")
+            plt.close(fig)
+            continue
+        
+        last_valid_bounds = bbox  # Update last valid bounding box
 
         lat_min, lat_max, lon_min, lon_max = bbox
 
@@ -195,16 +206,17 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
 
         # **Step 5: Plot clipped coastline**
         if clipped_coastline is not None and not clipped_coastline.empty:
-            clipped_coastline.plot(color="#bdbdbd", alpha=0.5, linewidth=0.75, ax=ax)
+            clipped_coastline.plot(color="#bdbdbd", alpha=0.444, linewidth=0.75, ax=ax)
 
         # **Step 6: Plot clipped roads**
         if clipped_roads is not None and not clipped_roads.empty:
             clipped_roads.plot(color="#8b8b8b", alpha=0.666, linewidth=0.666, ax=ax)
 
-        # **Step 7: Plot the full trajectory**
-        for route_points in routes:
-            route_array = np.array(route_points)
-            ax.plot(route_array[:, 1], route_array[:, 0], "w-", linewidth=2.5, alpha=0.8)
+        # **Step 7: Plot the full trajectory (only if add_path is True)**
+        if add_path:
+            for route_points in routes:
+                route_array = np.array(route_points)
+                ax.plot(route_array[:, 1], route_array[:, 0], "w-", linewidth=1.6, alpha=0.75)
 
         # **Step 8: Add date title**
         # ax.set_title(
@@ -212,7 +224,7 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
         #     color="#ffffff",
         #     alpha=0.8,
         #     family="monospace",
-        #     fontsize=24,
+        #     fontsize=12,
         #     fontweight="normal",
         #     stretch="ultra-expanded",
         #     loc="left",
@@ -230,12 +242,13 @@ def create_frames(daily_routes, output_folder="frames", add_coastline=False, add
 
     print(f"Frames saved in {output_folder}")
 
-def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=150, connect_segments=True):
+def main(json_file, output_folder="frames", dynamic_extent=False, add_path=True, add_coastline=False, add_roads=False, aspect_ratio="1:1", margin=0.02, dpi=150, connect_segments=True):
     """Generates daily route frames from Google Takeout Timeline JSON."""
     daily_routes = parse_timeline(json_file)
     create_frames(
         daily_routes,
         output_folder=output_folder,
+        add_path=add_path,
         add_coastline=add_coastline,
         add_roads=add_roads,
         aspect_ratio=aspect_ratio,
@@ -247,6 +260,6 @@ def main(json_file, output_folder="frames", dynamic_extent=False, add_coastline=
 
 # Run with roads & 10m coastline enabled
 if __name__ == "__main__":
-    json_path = "data/location-history_20251202.json"
-    main(json_path, output_folder="output/googlePlots/nineteen", add_coastline=True, add_roads=True, aspect_ratio="4:3", margin=0.15, dpi=45, connect_segments=True)
+    json_path = "data/location-history_20251231.json"
+    main(json_path, output_folder="output/nye-portrait", add_path=True, add_coastline=True, add_roads=True, aspect_ratio="3:4", margin=0.15, dpi=72, connect_segments=True)
     
