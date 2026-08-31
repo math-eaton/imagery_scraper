@@ -5,7 +5,7 @@ import os
 import io
 import config
 from PIL import Image
-from process_imagery_halftone import process_image
+from scripts.postprocess.process_imagery_halftone import process_image
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 

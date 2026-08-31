@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 # uncomment based on preferred processing algorithm
 # from process_imagery_floydSteinberg import process_image
-from process_imagery_halftone import process_image
+from scripts.postprocess.process_imagery_halftone import process_image
 # from process_imagery_ordered import process_image
 
 current_date = datetime.now().strftime("%Y%m%d")
