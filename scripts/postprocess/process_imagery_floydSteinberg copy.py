@@ -3,9 +3,9 @@ import numpy as np
 import os
 
 # Process the image using Floyd-Steinberg error diffusion
-def process_image(image, output_path, aspect_ratio=None, final_size=(1920, 1920)):
+def process_image(image, output_path, aspect_ratio=None, final_size=(1280, 1280)):
     # Check the input image resolution
-    min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
+    min_resolution = 512  # Set minimum resolution. API should provide 512 max thumbnail
     width, height = image.size
     if width < min_resolution or height < min_resolution:
         print(f"Image for application_id {os.path.basename(image_path).split('.')[0]} was not processed due to low resolution.")

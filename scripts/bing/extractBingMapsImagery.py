@@ -10,7 +10,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 # uncomment based on preferred processing algorithm
-# from process_imagery_floydSteinberg import process_image
+# from scripts.postprocess.process_imagery import process_image  # pass algorithm="floyd-steinberg"|"halftone"|"ordered"|"ordered-noise"
 from scripts.postprocess.process_imagery_halftone import process_image
 # from process_imagery_ordered import process_image
 
