@@ -64,8 +64,30 @@ def zoom_for_facility_size(sqft_value, latitude, base_size_px, frame_padding, mi
     return max(min_zoom, min(max_zoom, zoom))
 
 
+def rotate_to_angle(image, angle, width, height, image_format):
+    """Rotate the image clockwise by angle degrees and crop back to width x height.
+
+    Uses expand=True so corners aren't clipped during the rotation itself, then
+    center-crops back to the original frame size. For non-90-degree-multiple
+    angles this can still pull in a sliver of the expand fill at the crop's
+    corners (the largest axis-aligned rect that avoids it entirely is smaller
+    than the original frame) -- acceptable for now per the cropping tradeoff.
+    """
+    if image_format == "png" and image.mode != "RGBA":
+        image = image.convert("RGBA")
+
+    # PIL's rotate() is counter-clockwise for positive angles; negate so the
+    # angle column's clockwise/bearing-style convention rotates as expected.
+    rotated = image.rotate(-angle, expand=True, resample=Image.BICUBIC)
+
+    rw, rh = rotated.size
+    left = max(0, (rw - width) // 2)
+    top = max(0, (rh - height) // 2)
+    return rotated.crop((left, top, left + width, top + height))
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def get_azure_static_image(latitude, longitude, unique_id, zoom_level, width, height, tileset_id, image_format, output_dir):
+def get_azure_static_image(latitude, longitude, unique_id, zoom_level, width, height, tileset_id, image_format, output_dir, angle=None):
     unique_id = re.sub(r"[^\w-]+", "_", str(unique_id)).strip("_")
 
     params = {
@@ -84,6 +106,8 @@ def get_azure_static_image(latitude, longitude, unique_id, zoom_level, width, he
 
     if response.status_code == 200:
         image = Image.open(io.BytesIO(response.content))
+        if angle is not None:
+            image = rotate_to_angle(image, angle, width, height, image_format)
         output_file_path = os.path.join(output_dir, f"{unique_id}.{image_format}")
         image.save(output_file_path)
     else:
@@ -92,6 +116,7 @@ def get_azure_static_image(latitude, longitude, unique_id, zoom_level, width, he
 
 def process_point_mode(df, args, output_dir):
     has_size_col = args.size_col in df.columns
+    has_angle_col = bool(args.angle_col) and args.angle_col in df.columns
 
     for index, row in tqdm(df.iterrows(), total=df.shape[0]):
         unique_id = f"{index}_{row[args.id_col]}"
@@ -107,6 +132,13 @@ def process_point_mode(df, args, output_dir):
             args.zoom_level,
         )
 
+        angle_value = None
+        if has_angle_col and pd.notnull(row[args.angle_col]):
+            try:
+                angle_value = float(row[args.angle_col])
+            except (TypeError, ValueError):
+                angle_value = None
+
         get_azure_static_image(
             row[args.lat_col],
             row[args.lon_col],
@@ -117,6 +149,7 @@ def process_point_mode(df, args, output_dir):
             args.tileset_id,
             args.image_format,
             output_dir,
+            angle=angle_value,
         )
 
 
@@ -150,6 +183,7 @@ if __name__ == "__main__":
     parser.add_argument("--map-height", type=int, default=1280, help="Image height in pixels (80-1500)")
     parser.add_argument("--zoom-level", type=int, default=15, help="Fallback zoom level when facility size is blank/unparseable")
     parser.add_argument("--size-col", default="facility_size_sqft", help="Facility size column (sqft) used to pick zoom level")
+    parser.add_argument("--angle-col", default=None, help="Optional column with a rotation angle (degrees, clockwise) to post-process the image with; rotated image is center-cropped back to --map-width/--map-height")
     parser.add_argument("--frame-padding", type=float, default=3.0, help="Frame width as a multiple of the facility's footprint side length")
     parser.add_argument("--min-zoom", type=int, default=10, help="Lowest zoom level to use for very large facilities")
     parser.add_argument("--max-zoom", type=int, default=IMAGERY_MAX_ZOOM, help=f"Highest zoom level to use for very small facilities (clamped to {IMAGERY_MAX_ZOOM} for microsoft.imagery)")
