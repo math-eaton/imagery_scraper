@@ -78,7 +78,8 @@ def rotate_to_angle(image, angle, width, height, image_format):
 
     # PIL's rotate() is counter-clockwise for positive angles; negate so the
     # angle column's clockwise/bearing-style convention rotates as expected.
-    rotated = image.rotate(-angle, expand=True, resample=Image.BICUBIC)
+    # rotated = image.rotate(-angle, expand=True, resample=Image.BICUBIC)
+    rotated = image.rotate(-angle, expand=True, resample=Image.NEAREST, fillcolor=(0, 0, 0, 0) if image_format == "png" else (255, 255, 255))
 
     rw, rh = rotated.size
     left = max(0, (rw - width) // 2)

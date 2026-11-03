@@ -164,6 +164,7 @@ cython_debug/
 .gitignore
 .DS_store
 config.py
-output
+output*
 data/
 .claude
+sorted*.txt
